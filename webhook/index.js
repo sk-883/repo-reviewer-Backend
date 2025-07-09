@@ -9,7 +9,7 @@ import { Octokit } from 'octokit'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)
 
-// Load .env
+
 const env = dotenv.config({ path: join(__dirname, '../.env') })
 if (env.error) {
   console.error('Failed to load .env:', env.error)
@@ -31,7 +31,7 @@ app.post('/webhook', express.json(), async (req, res) => {
   const repo    = payload.repository.name
   await new Promise(resolve => setTimeout(resolve, 2000)) 
   console.log(payload)
-  
+
   try {
     if (event === 'push') {
       for (const commit of payload.commits) {
