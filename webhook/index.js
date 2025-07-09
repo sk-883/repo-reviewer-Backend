@@ -1,83 +1,76 @@
+#!/usr/bin/env node
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 
+import express from 'express'
+import { Octokit } from 'octokit'
+
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)
 
-const envResult = dotenv.config({ path: join(__dirname, '../.env') });
+// load .env
+const envResult = dotenv.config({ path: join(__dirname, '../.env') })
+if (envResult.error) {
+  console.error('Error loading .env:', envResult.error)
+  process.exit(1)
+}
 
-const TOKEN= envResult.parsed.GITHUB_TOKEN
-const PORT = envResult.parsed.PORT || 3000;
+const TOKEN = envResult.parsed.GITHUB_TOKEN
+const PORT  = envResult.parsed.PORT || 3000
 
+const app     = express()
+const octokit = new Octokit({ auth: TOKEN })
 
-import express from 'express';
-import { Octokit } from "octokit";
-
-
-const app = express();
-
-const octokit = new Octokit({ auth: TOKEN });
-
-// Parse JSON bodies for webhook payloads
 app.post('/webhook', express.json(), async (req, res) => {
-  // Acknowledge receipt
-  res.sendStatus(202);
+  res.sendStatus(202)
 
-  const githubEvent = req.headers['x-github-event'];
-  const payload     = req.body;
-
-  // Extract owner/login and repo/name
-  const owner = payload.repository.owner.login;
-  const repo  = payload.repository.name;
+  const githubEvent = req.headers['x-github-event']
+  const payload     = req.body
+  const owner       = payload.repository.owner.login
+  const repo        = payload.repository.name
 
   try {
     if (githubEvent === 'push') {
-      // For each commit in the push payload, fetch its full details
       for (const commit of payload.commits) {
-        const { data: commitData } = await octokit.repos.getCommit({
+        const { data: commitData } = await octokit.rest.repos.getCommit({
           owner,
           repo,
-          ref: commit.id
-        });
+          commit_sha: commit.id
+        })
 
         commitData.files.forEach(file => {
           console.log(
-            `[${commit.id.substring(0, 7)}] ${file.filename}: ` +
+            `[${commit.id.substring(0,7)}] ${file.filename}: ` +
             `${file.status} (+${file.additions}/-${file.deletions})`
-          );
-          console.log(file.patch);
-        });
+          )
+          console.log(file.patch)
+        })
       }
 
     } else if (githubEvent === 'pull_request') {
-      // Pull request number comes in payload.number
-      const prNumber = payload.number;
+      const prNumber = payload.pull_request?.number ?? payload.number
 
-      // List changed files in this PR
-      const { data: files } = await octokit.pulls.listFiles({
+      const { data: files } = await octokit.rest.pulls.listFiles({
         owner,
         repo,
         pull_number: prNumber
-      });
+      })
 
       files.forEach(file => {
         console.log(
           `PR #${prNumber} ${file.filename}: ` +
           `${file.status} (+${file.additions}/-${file.deletions})`
-        );
-        console.log(file.patch);
-      });
+        )
+        console.log(file.patch)
+      })
     }
 
-    // (You can add other events here…)
   } catch (err) {
-    console.error('Error handling webhook:', err);
+    console.error('Error handling webhook:', err)
   }
-});
-
+})
 
 app.listen(PORT, () => {
-  console.log(`Webhook server listening on port ${PORT}`);
-});
-
+  console.log(`Webhook server listening on port ${PORT}`)
+})
