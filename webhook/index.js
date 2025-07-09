@@ -17,6 +17,8 @@ app.post(
         // Fired on any git push (including merges)
         console.log(`Push to ${payload.ref} by ${payload.pusher.name}`); 
         console.log(`Commits (${payload.commits.length}):`);
+        console.log('___________________________________________')
+        console.log(payload)
         payload.commits.forEach(commit => {
           console.log(`- ${commit.id.substring(0,7)}: "${commit.message}" by ${commit.author.name}`);
         });
