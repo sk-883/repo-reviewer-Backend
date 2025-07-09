@@ -9,38 +9,37 @@ import { Octokit } from 'octokit'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)
 
-// Load environment variables
-const envResult = dotenv.config({ path: join(__dirname, '../.env') })
-if (envResult.error) {
-  console.error('Error loading .env:', envResult.error)
+// Load .env
+const env = dotenv.config({ path: join(__dirname, '../.env') })
+if (env.error) {
+  console.error('Failed to load .env:', env.error)
   process.exit(1)
 }
 
-const TOKEN = envResult.parsed.GITHUB_TOKEN
-const PORT  = envResult.parsed.PORT || 3000
+const TOKEN = env.parsed.GITHUB_TOKEN
+const PORT  = env.parsed.PORT || 3000
 
-// Initialize Express and Octokit
 const app     = express()
 const octokit = new Octokit({ auth: TOKEN })
 
-// Webhook endpoint
 app.post('/webhook', express.json(), async (req, res) => {
-  // Acknowledge immediately
   res.sendStatus(202)
 
-  const githubEvent = req.headers['x-github-event']
-  const payload     = req.body
-  const owner       = payload.repository.owner.login
-  const repo        = payload.repository.name
-
+  const event   = req.headers['x-github-event']
+  const payload = req.body
+  const owner   = payload.repository.owner.login
+  const repo    = payload.repository.name
+  await new Promise(resolve => setTimeout(resolve, 2000)) 
+  console.log(payload)
+  
   try {
-    if (githubEvent === 'push') {
+    if (event === 'push') {
       for (const commit of payload.commits) {
-        // Fetch full commit details, including file diffs
+        // 🔑 Use `ref` to hit /commits/{ref}
         const { data: commitData } = await octokit.rest.repos.getCommit({
           owner,
           repo,
-          commit_sha: commit.id
+          ref: commit.id
         })
 
         commitData.files.forEach(file => {
@@ -52,10 +51,9 @@ app.post('/webhook', express.json(), async (req, res) => {
         })
       }
 
-    } else if (githubEvent === 'pull_request') {
+    } else if (event === 'pull_request') {
       const prNumber = payload.pull_request.number
 
-      // List changed files in the PR
       const { data: files } = await octokit.rest.pulls.listFiles({
         owner,
         repo,
@@ -71,14 +69,11 @@ app.post('/webhook', express.json(), async (req, res) => {
       })
     }
 
-    // You can handle more events here...
-
   } catch (err) {
     console.error('Error handling webhook:', err)
   }
 })
 
-// Start the server
 app.listen(PORT, () => {
-  console.log(`Webhook server listening on port ${PORT}`)
+  console.log(`Listening on port ${PORT}`)
 })
