@@ -8,7 +8,6 @@ const __dirname  = dirname(__filename)
 
 const envResult = dotenv.config({ path: join(__dirname, '../.env') });
 const URL= envResult.parsed.WEBHOOK_PROXY_URL;
-// console.log('Using WEBHOOK_PROXY_URL:', process.env.WEBHOOK_PROXY_URL);
 
 
 import SmeeClient from 'smee-client'
