@@ -1,9 +1,23 @@
+import dotenv from 'dotenv'
+import { fileURLToPath } from 'url'
+import { dirname, join } from 'path'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname  = dirname(__filename)
+
+const envResult = dotenv.config({ path: join(__dirname, '../.env') });
+
+const TOKEN= envResult.parsed.GITHUB_TOKEN
+const PORT = envResult.parsed.PORT || 3000;
+
+
 import express from 'express';
 import { Octokit } from "octokit";
 
 
 const app = express();
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
+
+const octokit = new Octokit({ auth: TOKEN });
 
 // Parse JSON bodies for webhook payloads
 app.post('/webhook', express.json(), async (req, res) => {
@@ -62,7 +76,7 @@ app.post('/webhook', express.json(), async (req, res) => {
   }
 });
 
-const PORT = process.env.PORT || 3000;
+
 app.listen(PORT, () => {
   console.log(`Webhook server listening on port ${PORT}`);
 });
