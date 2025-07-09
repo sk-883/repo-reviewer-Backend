@@ -24,6 +24,10 @@ const octokit = new Octokit({ auth: TOKEN })
 
 app.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(202)
+  
+  console.log('Received webhook event:', req.headers['x-github-event'])
+  await new Promise(resolve=>setTimeout(resolve, 10000)) 
+  
 
   const githubEvent = req.headers['x-github-event']
   const payload     = req.body
