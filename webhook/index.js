@@ -1,70 +1,69 @@
-// server.js
 import express from 'express';
+import { Octokit } from "octokit";
+
+
 const app = express();
+const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
 
-// Parse JSON payloads for GitHub Webhooks
-app.post(
-  '/webhook',
-  express.json({ type: 'application/json' }),
-  (req, res) => {
-    res.status(202).send('Accepted'); // Acknowledge within 10s (GitHub requirement)
+// Parse JSON bodies for webhook payloads
+app.post('/webhook', express.json(), async (req, res) => {
+  // Acknowledge receipt
+  res.sendStatus(202);
 
-    const githubEvent = req.headers['x-github-event'];
-    const payload = req.body;
+  const githubEvent = req.headers['x-github-event'];
+  const payload     = req.body;
 
-    switch (githubEvent) {
-      case 'push':
-        // Fired on any git push (including merges)
-        console.log(`Push to ${payload.ref} by ${payload.pusher.name}`); 
-        console.log(`Commits (${payload.commits.length}):`);
-        console.log('___________________________________________')
-        console.log(payload)
-        payload.commits.forEach(commit => {
-          console.log(`- ${commit.id.substring(0,7)}: "${commit.message}" by ${commit.author.name}`);
+  // Extract owner/login and repo/name
+  const owner = payload.repository.owner.login;
+  const repo  = payload.repository.name;
+
+  try {
+    if (githubEvent === 'push') {
+      // For each commit in the push payload, fetch its full details
+      for (const commit of payload.commits) {
+        const { data: commitData } = await octokit.repos.getCommit({
+          owner,
+          repo,
+          ref: commit.id
         });
-        break;
 
-      case 'pull_request':
-        const action = payload.action;
-        const pr = payload.pull_request;
-        if (action === 'opened') {
-          console.log(`PR opened (#${payload.number}): ${pr.title}`);
-        } else if (action === 'closed') {
-          if (pr.merged) {
-            console.log(`PR merged (#${payload.number}) by ${pr.merged_by.login}`);
-          } else {
-            console.log(`PR closed without merge (#${payload.number})`);
-          }
-        } else if (action === 'reopened') {
-          console.log(`PR reopened (#${payload.number}): ${pr.title}`);
-        } else {
-          console.log(`Unhandled pull_request action: ${action}`);
-        }
-        break;
+        commitData.files.forEach(file => {
+          console.log(
+            `[${commit.id.substring(0, 7)}] ${file.filename}: ` +
+            `${file.status} (+${file.additions}/-${file.deletions})`
+          );
+          console.log(file.patch);
+        });
+      }
 
-      case 'issues':
-        // existing logic...
-        const issueAction = payload.action;
-        if (issueAction === 'opened') {
-          console.log(`Issue opened: ${payload.issue.title}`);
-        } else if (issueAction === 'closed') {
-          console.log(`Issue closed by ${payload.issue.user.login}`);
-        } else {
-          console.log(`Unhandled issues action: ${issueAction}`);
-        }
-        break;
+    } else if (githubEvent === 'pull_request') {
+      // Pull request number comes in payload.number
+      const prNumber = payload.number;
 
-      case 'ping':
-        console.log('Received ping event');
-        break;
+      // List changed files in this PR
+      const { data: files } = await octokit.pulls.listFiles({
+        owner,
+        repo,
+        pull_number: prNumber
+      });
 
-      default:
-        console.log(`Unhandled event type: ${githubEvent}`);
+      files.forEach(file => {
+        console.log(
+          `PR #${prNumber} ${file.filename}: ` +
+          `${file.status} (+${file.additions}/-${file.deletions})`
+        );
+        console.log(file.patch);
+      });
     }
+
+    // (You can add other events here…)
+  } catch (err) {
+    console.error('Error handling webhook:', err);
   }
-);
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Webhook listener running on port ${PORT}`);
+  console.log(`Webhook server listening on port ${PORT}`);
 });
+

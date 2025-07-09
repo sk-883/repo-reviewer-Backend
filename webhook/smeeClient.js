@@ -1,7 +1,7 @@
 import SmeeClient from 'smee-client'
 
 const smee = new SmeeClient({
-  source: 'https://smee.io/y9iZzMG5MTPjx0oh',
+  source: process.env.WEBHOOK_PROXY_URL,
   target: 'http://localhost:3000/webhook',
   logger: console
 })

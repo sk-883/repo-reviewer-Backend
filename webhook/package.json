@@ -12,6 +12,7 @@
   "description": "",
   "dependencies": {
     "express": "^5.1.0",
+    "octokit": "^5.0.3",
     "smee-client": "^4.3.1"
   }
 }
