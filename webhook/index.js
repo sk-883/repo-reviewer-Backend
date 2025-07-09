@@ -30,7 +30,7 @@ app.post('/webhook', express.json(), async (req, res) => {
   const owner   = payload.repository.owner.login
   const repo    = payload.repository.name
   await new Promise(resolve => setTimeout(resolve, 2000)) 
-  console.log(payload)
+
 
   try {
     if (event === 'push') {
