@@ -1,6 +1,6 @@
 # ┌─────────────── Node.js ────────────────
-node_modules/
-**/node_modules/
+/node_modules/
+/**/node_modules/
 
 # NPM/Yarn/Pnpm debug logs
 npm-debug.log*
