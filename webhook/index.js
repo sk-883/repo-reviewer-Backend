@@ -26,7 +26,7 @@ app.post('/webhook', express.json(), async (req, res) => {
     const repo  = repository.name
     let count=0;
     for (const commit of commits) {
-      console.log("commit count, "(++count)+"/n")
+      console.logg(commit)
       console.log(commit)
       await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
     }
