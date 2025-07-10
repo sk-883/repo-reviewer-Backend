@@ -3,7 +3,7 @@ import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import express from 'express'
 import { Octokit } from 'octokit'
-import { diffQueue } from './clients/redisClient.js'
+import { diffQueue } from '../redis/redisClient.js'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)

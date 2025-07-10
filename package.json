@@ -3,8 +3,13 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
+  "_moduleAliases": {
+    "@": "."
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node --loader module-alias/index.js index.js"
   },
   "keywords": [],
   "author": "",
@@ -13,6 +18,9 @@
     "bullmq": "^5.56.3",
     "express": "^5.1.0",
     "ioredis": "^5.6.1",
-    "octokit": "^5.0.3"
+    "module-alias": "^2.2.3",
+    "octokit": "^5.0.3",
+    "redis": "^5.6.0",
+    "weaviate-client": "^3.6.2"
   }
 }

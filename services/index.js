@@ -1,3 +1,0 @@
-/*
-This piece of code is to test the working of my webhook
-*/

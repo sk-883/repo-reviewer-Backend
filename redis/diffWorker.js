@@ -1,8 +1,8 @@
 import dotenv from 'dotenv'
 import { Worker } from 'bullmq'
-import { connection } from '../clients/redisClient.js'
+import { connection } from './redisClient.js'
 import { Octokit } from 'octokit'
-import weaviateClient from '../clients/weaviateClient.js'
+import weaviateClient from '../weaviatedb/weaviateClient.js'
 
 dotenv.config()
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
