@@ -24,7 +24,7 @@ app.post('/webhook', express.json(), async (req, res) => {
     const { repository, commits } = payload
     const owner = repository.owner.login
     const repo  = repository.name
-    let count=0;
+    // let count=0;
     for (const commit of commits) {
       console.logg(commit)
       console.log(commit)
