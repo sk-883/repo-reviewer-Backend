@@ -10,7 +10,7 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)
 
 dotenv.config({ path: join(__dirname, '../.env') })
-// Initialize Weaviate client
+/// Initialize Weaviate client
 // const client = weaviate.client({
 //   scheme: process.env.WEAVIATE_SCHEME || 'http',
 //   host: process.env.WEAVIATE_HOST,      // e.g. 'localhost:8080'
