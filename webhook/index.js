@@ -8,24 +8,24 @@ import { diffQueue } from '../redis/redisClient.js'
 import { weaviateClient } from '../weaviatedb/weaviateClient.js'
 
 const __filename = fileURLToPath(import.meta.url)
-const __dirname  = dirname(__filename)
+const __dirname = dirname(__filename)
 
 dotenv.config({ path: join(__dirname, '../.env') })
 const TOKEN = process.env.GITHUB_TOKEN
-const PORT  = process.env.PORT || 3000
+const PORT = process.env.PORT || 3000
 
-const app     = express()
+const app = express()
 const octokit = new Octokit({ auth: TOKEN })
 
 app.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(202)
-  const event   = req.headers['x-github-event']
+  const event = req.headers['x-github-event']
   const payload = req.body
 
   if (event === 'push') {
     const { repository, commits } = payload
     const owner = repository.owner.login
-    const repo  = repository.name
+    const repo = repository.name
 
     try {
       for (const commit of commits) {
@@ -42,25 +42,44 @@ app.post('/webhook', express.json(), async (req, res) => {
 
         // enqueue the diff job
         // await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
-        const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, commit_sha: commit.id  });
-            for (const file of data.files) {
-              if (!file.patch || file.patch.length > MAX_PATCH_LENGTH) continue
-              // Store raw diff in Weaviate
-              const sha=commit.id;
-              console.log("inside for loop")
-              console.log(`Processing file: ${file.filename} in commit ${commit.id}`)
-              console.log(`Additions: ${file.additions}, Deletions: ${file.deletions}, Patch length: ${file.patch.length}`)
-              await weaviateClient.data.creator()
-                .withClassName('Diff')
-                .withProperties({
-                  sha,
-                  filePath: file.filename,
-                  additions: file.additions,
-                  deletions: file.deletions,
-                  patch: file.patch
-                })
-                .do()
-            }
+        const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, commit_sha: commit.id });
+
+
+
+        commitData.files.forEach(file => {
+          if (file.patch && file.patch.length < MAX_PATCH_LENGTH) {
+            console.log(
+              `[${commit.id.substring(0, 7)}] ${file.filename}: ` +
+              `${file.status} (+${file.additions}/-${file.deletions})`
+            )
+            console.log(file.patch)
+          }
+
+        })
+
+
+
+
+
+
+        for (const file of data.files) {
+          if (!file.patch || file.patch.length > MAX_PATCH_LENGTH) continue
+          // Store raw diff in Weaviate
+          const sha = commit.id;
+          console.log("inside for loop")
+          console.log(`Processing file: ${file.filename} in commit ${commit.id}`)
+          console.log(`Additions: ${file.additions}, Deletions: ${file.deletions}, Patch length: ${file.patch.length}`)
+          await weaviateClient.data.creator()
+            .withClassName('Diff')
+            .withProperties({
+              sha,
+              filePath: file.filename,
+              additions: file.additions,
+              deletions: file.deletions,
+              patch: file.patch
+            })
+            .do()
+        }
         console.log(`Enqueued job process-diff for ${commit.id}`)
       }
     } catch (err) {
@@ -69,8 +88,8 @@ app.post('/webhook', express.json(), async (req, res) => {
   }
   else if (event === 'pull_request') {
     const { repository, pull_request } = payload
-    const owner    = repository.owner.login
-    const repo     = repository.name
+    const owner = repository.owner.login
+    const repo = repository.name
     const prNumber = pull_request.number
 
     try {
