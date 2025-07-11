@@ -7,4 +7,5 @@ const client = weaviate.client({
   apiKey: new weaviate.ApiKey(process.env.WEAVIATE_API_KEY)
 });
 
+console.log(client)
 export default client;
