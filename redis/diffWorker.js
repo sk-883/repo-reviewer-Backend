@@ -19,7 +19,7 @@ console.log("Worker logs, inside job processing")
     console.log("inside jisb name")
     const { owner, repo, commitSha } = data
     const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, commit_sha: commitSha })
-    for (const file of commitData.files) {
+    for (const file of data.files) {
       if (!file.patch || file.patch.length > MAX_PATCH_LENGTH) continue
       // Store raw diff in Weaviate
       console.log("inside for loop")
