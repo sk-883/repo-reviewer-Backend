@@ -193,53 +193,49 @@ const app     = express()
 const octokit = new Octokit({ auth: TOKEN })
 
 app.post('/webhook', express.json(), async (req, res) => {
-  res.sendStatus(202)
-  const { repository, commits, pull_request } = req.body
-  const owner = repository.owner.login
-  const repo  = repository.name
+  res.sendStatus(202);
 
-  try {
-    if (req.headers['x-github-event'] === 'push') {
-      for (const commit of commits) {
-        const { data: commitData } = await octokit.rest.repos.getCommit({
-          owner,
-          repo,
-          commit_sha: commit.id
-        })
+  if (req.headers['x-github-event'] !== 'push') return;
+  const { repository, commits } = req.body;
+  const owner = repository.owner.login;
+  const repo  = repository.name;
 
-        if (Array.isArray(commitData.files)) {
-          commitData.files.forEach(file => {
-            console.log(
-              `[${commit.id.substring(0,7)}] ${file.filename}: ` +
-              `( +${file.additions}/-${file.deletions} )`
-            )
-            console.log(file.patch)
-          })
-        } else {
-          console.warn(`No files for commit ${commit.id}`)
-        }
-      }
+  for (const commit of commits) {
+    const commitSha = commit.id;
+    // 1. Try getCommit
+    const { data: commitData } = await octokit.rest.repos.getCommit({
+      owner,
+      repo,
+      commit_sha: commitSha
+    });
 
-    } else if (req.headers['x-github-event'] === 'pull_request') {
-      const prNumber = pull_request.number
-      const { data: files } = await octokit.rest.pulls.listFiles({
+    // 2. Fallback to compare if no files
+    let files = commitData.files;
+    if (!Array.isArray(files) || files.length === 0) {
+      console.warn(`No files from getCommit for ${commitSha}, doing compare…`);
+      const base =
+        commitData.parents?.[0]?.sha ||
+        `${commitSha}^`;
+      const { data: cmp } = await octokit.rest.repos.compareCommits({
         owner,
         repo,
-        pull_number: prNumber
-      })
-
-      files.forEach(file => {
-        console.log(
-          `PR #${prNumber} ${file.filename}: ` +
-          `( +${file.additions}/-${file.deletions} )`
-        )
-        console.log(file.patch)
-      })
+        base,
+        head: commitSha
+      });
+      files = cmp.files;
     }
-  } catch (error) {
-    console.error('Error handling webhook:', error)
+
+    // 3. Log every diff
+    for (const file of files) {
+      console.log(
+        `[${commitSha.substring(0,7)}] ${file.filename}: ` +
+        `(+${file.additions}/-${file.deletions})`
+      );
+      console.log(file.patch);
+    }
   }
-})
+});
+
 
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`)
