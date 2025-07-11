@@ -21,7 +21,7 @@ console.log("Worker logs, inside job processing")
     const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, commit_sha: commitSha })
     for (const file of data.files) {
       if (!file.patch || file.patch.length > MAX_PATCH_LENGTH) continue
-      // Store raw diff in Weaviate//
+      // Store raw diff in Weavia te//
       console.log("inside for loop")
       console.log(`Processing file: ${file.filename} in commit ${commitSha}`)
       console.log(`Additions: ${file.additions}, Deletions: ${file.deletions}, Patch length: ${file.patch.length}`)
