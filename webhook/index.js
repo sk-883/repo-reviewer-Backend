@@ -28,8 +28,9 @@ app.post('/webhook', express.json(), async (req, res) => {
     for (const commit of commits) {
       // console.log(commit)
       console.log(commit.id, repo)
-      await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
       console.log(diffQueue.getJobs)
+      await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
+      
     }
 
   } else if (event === 'pull_request') {
