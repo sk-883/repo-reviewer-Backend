@@ -2,7 +2,7 @@ import dotenv from 'dotenv'
 import { Worker } from 'bullmq'
 import { connection } from './redisClient.js'
 import { Octokit } from 'octokit'
-import weaviateClient from '../weaviatedb/weaviateClient.js'
+import {weaviateClient} from '../weaviatedb/weaviateClient.js'
 
 dotenv.config()
 const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
@@ -16,6 +16,7 @@ console.log("Worker logs, inside job processing")
 
   const data = job.data
   if (job.name === 'process-diff') {
+    console.log("inside jisb name")
     const { owner, repo, commitSha } = data
     const { data: commitData } = await octokit.rest.repos.getCommit({ owner, repo, commit_sha: commitSha })
     for (const file of commitData.files) {
