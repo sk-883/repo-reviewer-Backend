@@ -46,13 +46,14 @@ app.post('/webhook', express.json(), async (req, res) => {
             for (const file of commitData.files) {
               if (!file.patch || file.patch.length > MAX_PATCH_LENGTH) continue
               // Store raw diff in Weaviate
+              const sha=commit.id;
               console.log("inside for loop")
               console.log(`Processing file: ${file.filename} in commit ${commit.id}`)
               console.log(`Additions: ${file.additions}, Deletions: ${file.deletions}, Patch length: ${file.patch.length}`)
               await weaviateClient.data.creator()
                 .withClassName('Diff')
                 .withProperties({
-                  commit.id,
+                  sha,
                   filePath: file.filename,
                   additions: file.additions,
                   deletions: file.deletions,
