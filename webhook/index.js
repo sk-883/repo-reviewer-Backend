@@ -30,6 +30,9 @@ app.post('/webhook', express.json(), async (req, res) => {
       console.log(`Commit ID: ${commit.id}, Repository: ${repo}`)
       const queueContent = await diffQueue.getJobs(['waiting', 'active', 'completed', 'failed'])
       console.log('Current diffQueue content:', queueContent)
+      if (!queueContent || queueContent.waiting.length === 0) {
+        console.log('diffQueue is empty or not working properly. Please check the Redis client configuration.')
+      }
       await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
       
     }
