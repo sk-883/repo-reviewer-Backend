@@ -22,6 +22,7 @@ console.log("Worker logs, inside job processing")
     for (const file of commitData.files) {
       if (!file.patch || file.patch.length > MAX_PATCH_LENGTH) continue
       // Store raw diff in Weaviate
+      console.log("inside for loop")
       console.log(`Processing file: ${file.filename} in commit ${commitSha}`)
       console.log(`Additions: ${file.additions}, Deletions: ${file.deletions}, Patch length: ${file.patch.length}`)
       await weaviateClient.data.creator()
