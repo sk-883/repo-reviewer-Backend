@@ -1,3 +1,4 @@
+// src/webhook.js
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -24,27 +25,41 @@ app.post('/webhook', express.json(), async (req, res) => {
     const { repository, commits } = payload
     const owner = repository.owner.login
     const repo  = repository.name
-    // let count=0;
-    for (const commit of commits) {
-      // console.log(commit)
-      console.log(`Commit ID: ${commit.id}, Repository: ${repo}`)
-      console.log('Current diffQueue content:', queueContent)
-      if (!queueContent || queueContent.waiting.length === 0) {
-        console.log('diffQueue is empty or not working properly. Please check the Redis client configuration.')
-      }
-      await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
-      
-    }
 
-  } else if (event === 'pull_request') {
+    try {
+      for (const commit of commits) {
+        console.log(`Commit ID: ${commit.id}  Repository: ${repo}`)
+
+        // fetch counts instead of getJobs()
+        const waiting   = await diffQueue.getWaitingCount()
+        const active    = await diffQueue.getActiveCount()
+        const completed = await diffQueue.getCompletedCount()
+        const failed    = await diffQueue.getFailedCount()
+        console.log(
+          `Queue status — waiting: ${waiting}, active: ${active}, completed: ${completed}, failed: ${failed}`
+        )
+
+        // enqueue the diff job
+        await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
+        console.log(`Enqueued job process-diff for ${commit.id}`)
+      }
+    } catch (err) {
+      console.error('Error in /webhook handler:', err)
+    }
+  }
+  else if (event === 'pull_request') {
     const { repository, pull_request } = payload
     const owner    = repository.owner.login
     const repo     = repository.name
     const prNumber = pull_request.number
 
-    // Enqueue the pull request for file processing
-    await diffQueue.add('process-pull', { owner, repo, prNumber })
+    try {
+      await diffQueue.add('process-pull', { owner, repo, prNumber })
+      console.log(`Enqueued job process-pull for PR #${prNumber}`)
+    } catch (err) {
+      console.error('Failed to enqueue process-pull:', err)
+    }
   }
 })
 
-app.listen(PORT, () => console.log(`Webhook listener on port ${PORT}`))
+app.listen(PORT, () => console.log(`Webhook listener running on port ${PORT}`))
