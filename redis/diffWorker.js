@@ -10,7 +10,10 @@ const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN })
 // Threshold to skip overly large diffs
 const MAX_PATCH_LENGTH = parseInt(process.env.MAX_PATCH_LENGTH || '10000', 10)
 
+console.log("Worker logs, outside job processing")
 new Worker('diff-processing', async job => {
+console.log("Worker logs, inside job processing")
+
   const data = job.data
   if (job.name === 'process-diff') {
     const { owner, repo, commitSha } = data
