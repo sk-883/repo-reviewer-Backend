@@ -180,7 +180,7 @@ import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import express from 'express'
-import { Octokit } from '@octokit/rest'
+import { Octokit } from 'octokit'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)
@@ -201,31 +201,37 @@ app.post('/webhook', express.json(), async (req, res) => {
   try {
     if (req.headers['x-github-event'] === 'push') {
       for (const commit of commits) {
-        const { data: commitData } = await octokit.repos.getCommit({
+        const { data: commitData } = await octokit.rest.repos.getCommit({
           owner,
           repo,
           commit_sha: commit.id
         })
 
-        commitData.files.forEach(file => {
-          console.log(
-            `[${commit.id.substring(0,7)}] ${file.filename}: ` +
-            `${file.status} (+${file.additions}/-${file.deletions})`
-          )
-          console.log(file.patch)
-        })
+        if (Array.isArray(commitData.files)) {
+          commitData.files.forEach(file => {
+            console.log(
+              `[${commit.id.substring(0,7)}] ${file.filename}: ` +
+              `( +${file.additions}/-${file.deletions} )`
+            )
+            console.log(file.patch)
+          })
+        } else {
+          console.warn(`No files for commit ${commit.id}`)
+        }
       }
+
     } else if (req.headers['x-github-event'] === 'pull_request') {
       const prNumber = pull_request.number
-      const { data: files } = await octokit.pulls.listFiles({
+      const { data: files } = await octokit.rest.pulls.listFiles({
         owner,
         repo,
         pull_number: prNumber
       })
+
       files.forEach(file => {
         console.log(
           `PR #${prNumber} ${file.filename}: ` +
-          `${file.status} (+${file.additions}/-${file.deletions})`
+          `( +${file.additions}/-${file.deletions} )`
         )
         console.log(file.patch)
       })
