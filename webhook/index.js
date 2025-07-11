@@ -105,6 +105,77 @@
 // app.listen(PORT, () => console.log(`Webhook listener running on port ${PORT}`))
 
 
+// import dotenv from 'dotenv'
+// import { fileURLToPath } from 'url'
+// import { dirname, join } from 'path'
+// import express from 'express'
+// import { Octokit } from '@octokit/rest'
+
+// const __filename = fileURLToPath(import.meta.url)
+// const __dirname  = dirname(__filename)
+
+// dotenv.config({ path: join(__dirname, '../.env') })
+// const TOKEN = process.env.GITHUB_TOKEN
+// const PORT  = process.env.PORT || 3000
+
+// const app     = express()
+// const octokit = new Octokit({ auth: TOKEN })
+
+// app.post('/webhook', express.json(), async (req, res) => {
+//   res.sendStatus(202)
+//   const { repository, commits, pull_request } = req.body
+//   const owner = repository?.owner?.login
+//   const repo  = repository?.name
+
+//   try {
+//     const event = req.headers['x-github-event']
+//     if (event === 'push') {
+//       for (const commit of commits) {
+//         const { data: commitData } = await octokit.rest.repos.getCommit({
+//           owner,
+//           repo,
+//           commit_sha: commit.id
+//         })
+
+//         if (!commitData.files) {
+//           console.warn(`No files array on commit ${commit.id}`)
+//           continue
+//         }
+
+//         for (const file of commitData.files) {
+//           console.log(
+//             `[${commit.id.substring(0,7)}] ${file.filename}: ` +
+//             `${file.status} (+${file.additions}/-${file.deletions})`
+//           )
+//           console.log(file.patch)
+//         }
+//       }
+//     } else if (event === 'pull_request') {
+//       const prNumber = pull_request.number
+//       const { data: files } = await octokit.rest.pulls.listFiles({
+//         owner,
+//         repo,
+//         pull_number: prNumber
+//       })
+
+//       for (const file of files) {
+//         console.log(
+//           `PR #${prNumber} ${file.filename}: ` +
+//           `${file.status} (+${file.additions}/-${file.deletions})`
+//         )
+//         console.log(file.patch)
+//       }
+//     }
+//   } catch (error) {
+//     console.error('Error handling webhook:', error)
+//   }
+// })
+
+// app.listen(PORT, () => {
+//   console.log(`Listening on port ${PORT}`)
+// })
+
+
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
@@ -124,47 +195,40 @@ const octokit = new Octokit({ auth: TOKEN })
 app.post('/webhook', express.json(), async (req, res) => {
   res.sendStatus(202)
   const { repository, commits, pull_request } = req.body
-  const owner = repository?.owner?.login
-  const repo  = repository?.name
+  const owner = repository.owner.login
+  const repo  = repository.name
 
   try {
-    const event = req.headers['x-github-event']
-    if (event === 'push') {
+    if (req.headers['x-github-event'] === 'push') {
       for (const commit of commits) {
-        const { data: commitData } = await octokit.rest.repos.getCommit({
+        const { data: commitData } = await octokit.repos.getCommit({
           owner,
           repo,
           commit_sha: commit.id
         })
 
-        if (!commitData.files) {
-          console.warn(`No files array on commit ${commit.id}`)
-          continue
-        }
-
-        for (const file of commitData.files) {
+        commitData.files.forEach(file => {
           console.log(
             `[${commit.id.substring(0,7)}] ${file.filename}: ` +
             `${file.status} (+${file.additions}/-${file.deletions})`
           )
           console.log(file.patch)
-        }
+        })
       }
-    } else if (event === 'pull_request') {
+    } else if (req.headers['x-github-event'] === 'pull_request') {
       const prNumber = pull_request.number
-      const { data: files } = await octokit.rest.pulls.listFiles({
+      const { data: files } = await octokit.pulls.listFiles({
         owner,
         repo,
         pull_number: prNumber
       })
-
-      for (const file of files) {
+      files.forEach(file => {
         console.log(
           `PR #${prNumber} ${file.filename}: ` +
           `${file.status} (+${file.additions}/-${file.deletions})`
         )
         console.log(file.patch)
-      }
+      })
     }
   } catch (error) {
     console.error('Error handling webhook:', error)
@@ -174,4 +238,5 @@ app.post('/webhook', express.json(), async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`)
 })
+
 
