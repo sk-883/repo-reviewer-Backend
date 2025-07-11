@@ -104,12 +104,12 @@
 
 // app.listen(PORT, () => console.log(`Webhook listener running on port ${PORT}`))
 
+
 import dotenv from 'dotenv'
 import { fileURLToPath } from 'url'
 import { dirname, join } from 'path'
 import express from 'express'
-import { Octokit } from 'octokit'
-
+import { Octokit } from '@octokit/rest'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname  = dirname(__filename)
@@ -167,4 +167,5 @@ app.post('/webhook', express.json(), async (req, res) => {
 app.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`)
 })
+
 
