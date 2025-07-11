@@ -27,8 +27,9 @@ app.post('/webhook', express.json(), async (req, res) => {
     // let count=0;
     for (const commit of commits) {
       // console.log(commit)
-      console.log(commit.id, repo)
-      console.log(diffQueue.getJobs)
+      console.log(`Commit ID: ${commit.id}, Repository: ${repo}`)
+      const queueContent = await diffQueue.getJobs(['waiting', 'active', 'completed', 'failed'])
+      console.log('Current diffQueue content:', queueContent)
       await diffQueue.add('process-diff', { owner, repo, commitSha: commit.id })
       
     }
